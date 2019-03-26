@@ -1,0 +1,9 @@
+{
+  "name": "task",
+  "version": "1.0.0",
+  "description": "package.json for task lib",
+  "dependencies": {
+    "vss-web-extension-sdk": "^1.95.2"
+  },
+  "devDependencies": {}
+}

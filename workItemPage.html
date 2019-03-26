@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <title>Work item menu and form observer sample</title>
+    </head>
+    <script src="node_modules/vss-web-extension-sdk/lib/VSS.SDK.min.js"></script>
+
+    <script>
+var TotalWork;
+var RemainingWork;
+//var changedFields = [];
+VSS.init({
+     explicitNotifyLoaded: true,
+     usePlatformScripts: true
+ });
+
+ VSS.require(["TFS/WorkItemTracking/Services"], function (_WorkItemServices) {
+
+     // Get the WorkItemFormService.  This service allows you to get/set fields/links on the 'active' work item (the work item
+     // that currently is displayed in the UI).
+     function getWorkItemFormService()
+     {
+         return _WorkItemServices.WorkItemFormService.getService();
+     }
+
+     // Register a listener for the work item page contribution
+     VSS.register(VSS.getContribution().id, function () {
+         return {
+             // Called when the active work item is modified
+             onFieldChanged: function(args) {
+                getWorkItemFormService().then(function(service) { 
+                        
+                            // Get the current values for a few of the common fields
+                            service.getFieldValues(["Custom.TotalWork","Microsoft.VSTS.Scheduling.RemainingWork"]).then(
+                                function (value) {
+                                if ((RemainingWork == null && Object.keys(args.changedFields) != "Microsoft.VSTS.Scheduling.RemainingWork" && value["Microsoft.VSTS.Scheduling.RemainingWork"] == null ) && value["Custom.TotalWork"] != null)
+                        {console.log("Changing Remaining Work")
+                       getWorkItemFormService().then(function(service) {
+                     service.setFieldValue("Microsoft.VSTS.Scheduling.RemainingWork", value["Custom.TotalWork"])
+                        });
+                        }  
+
+                        if (value["Microsoft.VSTS.Scheduling.RemainingWork"] != null && (TotalWork == null &&  Object.keys(args.changedFields) != "Custom.TotalWork" && value["Custom.TotalWork"] == null))
+                        {
+                            console.log("Changing Total Work")
+                       getWorkItemFormService().then(function(service) {
+                     service.setFieldValue("Custom.TotalWork", value["Microsoft.VSTS.Scheduling.RemainingWork"])
+                        });
+                        } 
+                                },
+                                function(error) { 
+                                    window.alert(error.message); 
+                                });
+                        });
+                                },
+             // Called when a new work item is being loaded in the UI
+             onLoaded: function (args) {
+                getWorkItemFormService().then(function(service) {            
+                            // Get the current values for a few of the common fields
+                            console.log(TotalWork)
+                            service.getFieldValues(["Custom.TotalWork","Microsoft.VSTS.Scheduling.RemainingWork"]).then(
+                                function (value) {
+                                        RemainingWork = value["Microsoft.VSTS.Scheduling.RemainingWork"]
+                                        TotalWork = value["Custom.TotalWork"]
+
+                                    
+                            });
+                });
+
+             },
+             
+             // Called when the active work item is being unloaded in the UI
+             onUnloaded: function (args) {
+                RemainingWork = undefined
+                TotalWork =  undefined
+                  console.log("Unloaded")
+             },
+             
+             // Called after the work item has been saved
+             onSaved: function (args) {
+                getWorkItemFormService().then(function(service) {            
+                            // Get the current values for a few of the common fields.
+                            service.getFieldValues(["Custom.TotalWork","Microsoft.VSTS.Scheduling.RemainingWork"]).then(
+                                function (value) {
+                                        RemainingWork = value["Microsoft.VSTS.Scheduling.RemainingWork"]
+                                        TotalWork = value["Custom.TotalWork"]
+
+                            });
+                });
+             }, 
+             // Called when the work item is reset to its unmodified state (undo)
+             onReset: function (args) {
+             },
+             
+             // Called when the work item has been refreshed from the server
+             onRefreshed: function (args) {
+             }
+         }
+     });
+
+     VSS.notifyLoadSucceeded();
+      });
+
+    </script>
+
+</body>
+
+</html>
